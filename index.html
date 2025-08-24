@@ -1,8 +1,51 @@
 <!DOCTYPE html>
-<html>
-  <head><title>Lien du code python</title>
-  <meta charset="UTF-8"></head>
-  <body><h1>Le code : 
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mon Code Turtle Python</title>
+    <meta name="description" content="Un code Turtle Python qui dessine une figure colorée et stylée !">
+    <style>
+        body {
+            background: #111;
+            color: #f1f1f1;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.5;
+        }
+        h1 {
+            color: #00ffcc;
+        }
+        pre {
+            background: #222;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            color: #fff;
+        }
+        code {
+            font-family: "Courier New", monospace;
+        }
+        a.download {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 15px;
+            background: #00ffcc;
+            color: #000;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        a.download:hover {
+            background: #00ccaa;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Mon Code Turtle Python</h1>
+<p>Coucou tout le monde ! Voici un code marrant qui dessine une figure colorée et stylée. Copiez-le ou téléchargez-le pour le tester chez vous !</p>
+
+<pre><code>
 import turtle as t
 import colorsys, time
 
@@ -39,5 +82,9 @@ for i in range(steps):
         time.sleep(remaining / steps_left)
 
 t.done()
-</h1></body>
+</code></pre>
+
+<a href="code_turtle.py" class="download" download>Télécharger le script (.py)</a>
+
+</body>
 </html>
