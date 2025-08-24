@@ -1,89 +1,173 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <title>Mon Code Turtle Python</title>
-  <meta name="description" content="Un code Turtle Python qui dessine une figure colorée et stylée !" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { background:#111; color:#f1f1f1; font-family: Arial, sans-serif; padding:24px; line-height:1.6; }
-    h1 { color:#00ffcc; margin-bottom:8px; }
-    p { margin-top:0 }
-    pre { background:#222; padding:16px; border-radius:10px; overflow-x:auto; color:#fff; }
-    code { font-family: "Courier New", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    .actions { margin-top:16px; display:flex; gap:12px; flex-wrap:wrap; }
-    button, a.download {
-      cursor:pointer; border:none; border-radius:10px; padding:10px 14px; font-weight:700;
-      background:#00ffcc; color:#000; text-decoration:none; box-shadow:0 4px 14px rgba(0,0,0,.25);
+<meta charset="UTF-8">
+<title>Scripts Python - Dark Hub</title>
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background-color: #0d0d0d;
+        color: #00ff88;
+        text-align: center;
     }
-    button:hover, a.download:hover { background:#00ccaa; }
-  </style>
+    h1 { margin-top: 50px; }
+    button {
+        background: #001a12;
+        color: #00ff88;
+        border: 1px solid #00ff88;
+        padding: 10px 20px;
+        margin: 10px;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: 0.2s;
+    }
+    button:hover { background: #003322; }
+    #scriptsPanel, #scriptDetail, #addScriptModal {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.95);
+        padding: 20px;
+        overflow-y: auto;
+    }
+    #scriptsList button { display: block; margin: 5px auto; width: 200px; }
+    input, textarea {
+        width: 80%;
+        margin: 10px auto;
+        display: block;
+        padding: 8px;
+        background: #000;
+        color: #00ff88;
+        border: 1px solid #00ff88;
+    }
+</style>
 </head>
 <body>
 
-  <h1>Mon Code Turtle Python</h1>
-  <p>Coucou ! Voici le code. Tu peux le copier… ou cliquer sur le bouton pour télécharger directement le fichier <code>.py</code>.</p>
+<h1>Bienvenue sur Dark Hub</h1>
+<p>Entrez le code d'accès admin :</p>
+<input type="password" id="adminCode" placeholder="Code secret">
+<button onclick="checkAdmin()">Entrer</button>
+<br><br>
+<button onclick="openScripts()">Ouvrir les scripts</button>
 
-  <pre><code id="snippet">
-import turtle as t
-import colorsys, time
+<!-- Panneau des scripts -->
+<div id="scriptsPanel">
+    <h2>Scripts disponibles</h2>
+    <input type="text" id="searchBox" placeholder="Rechercher un script..." oninput="filterScripts()">
+    <div id="scriptsList"></div>
+    <button onclick="closeScripts()">Fermer</button>
+    <button id="addButton" style="display:none;" onclick="openAddModal()">+</button>
+</div>
 
-t.bgcolor("black")
-t.pensize(1)
-t.speed(0)
+<!-- Détails d'un script -->
+<div id="scriptDetail">
+    <h2 id="detailTitle"></h2>
+    <p id="detailDescription"></p>
+    <pre id="detailCode" style="text-align:left; background:#001a12; padding:10px; border-radius:5px; overflow:auto;"></pre>
+    <button onclick="closeDetail()">Fermer</button>
+</div>
 
-h = 0
-steps = 250
-target_duration = 3  # secondes
+<!-- Fenêtre d'ajout de script -->
+<div id="addScriptModal">
+    <h2>Ajouter un script</h2>
+    <input id="newTitle" placeholder="Titre du script">
+    <textarea id="newDescription" placeholder="Description"></textarea>
+    <textarea id="newCode" placeholder="Code Python"></textarea>
+    <button onclick="saveScript()">Valider</button>
+    <button onclick="closeAddModal()">Annuler</button>
+</div>
 
-start = time.time()
+<script>
+let isAdmin = false;
+let scripts = JSON.parse(localStorage.getItem("scripts") || "[]");
 
-for i in range(steps):
-    c = colorsys.hsv_to_rgb(h, 1, 1)
-    t.fillcolor(c)
-    t.begin_fill()
+// Scripts par défaut
+if (scripts.length === 0) {
+    scripts = [
+        {
+            title: "Spirale Colorée",
+            description: "Un dessin hypnotique avec turtle et des couleurs HSV.",
+            code: `import turtle as t\nimport colorsys\n\nt.bgcolor("black")\nt.speed(0)\nt.pensize(2)\nh = 0\n\nfor i in range(360):\n    c = colorsys.hsv_to_rgb(h, 1, 1)\n    t.pencolor(c)\n    t.circle(i, 90)\n    t.left(59)\n    h += 0.005\n\nt.done()`
+        }
+    ];
+}
 
-    t.forward(i)
-    t.left(100)
-    t.circle(30)
+function openScripts() {
+    renderScripts();
+    document.getElementById('scriptsPanel').style.display = 'block';
+}
 
-    for j in range(2):
-        t.forward(i * j)
-        t.right(109)
+function closeScripts() {
+    document.getElementById('scriptsPanel').style.display = 'none';
+}
 
-    t.end_fill()
-    h += 0.008
-
-    elapsed = time.time() - start
-    remaining = target_duration - elapsed
-    steps_left = steps - (i + 1)
-    if steps_left > 0 and remaining > 0:
-        time.sleep(remaining / steps_left)
-
-t.done()
-  </code></pre>
-
-  <div class="actions">
-    <button id="download-btn">Télécharger le script (.py)</button>
-    <!-- Optionnel : lien simple si tu ajoutes réellement un fichier code_turtle.py à la racine du repo -->
-    <!-- <a class="download" href="code_turtle.py" download>Télécharger (version fichier du repo)</a> -->
-  </div>
-
-  <script>
-    // Crée et télécharge un fichier .py à partir du contenu affiché
-    document.getElementById('download-btn').addEventListener('click', () => {
-      const code = document.getElementById('snippet').textContent.trim() + "\n";
-      const blob = new Blob([code], { type: 'text/x-python' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'code_turtle.py';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+function renderScripts() {
+    const list = document.getElementById('scriptsList');
+    list.innerHTML = "";
+    scripts.forEach((s, i) => {
+        const btn = document.createElement("button");
+        btn.innerText = s.title;
+        btn.onclick = () => openDetail(i);
+        list.appendChild(btn);
     });
-  </script>
+}
+
+function filterScripts() {
+    const query = document.getElementById('searchBox').value.toLowerCase();
+    const buttons = document.querySelectorAll('#scriptsList button');
+    buttons.forEach(btn => {
+        btn.style.display = btn.innerText.toLowerCase().includes(query) ? 'block' : 'none';
+    });
+}
+
+function openDetail(index) {
+    const s = scripts[index];
+    document.getElementById('detailTitle').innerText = s.title;
+    document.getElementById('detailDescription').innerText = s.description;
+    document.getElementById('detailCode').innerText = s.code;
+    document.getElementById('scriptDetail').style.display = 'block';
+}
+
+function closeDetail() {
+    document.getElementById('scriptDetail').style.display = 'none';
+}
+
+function checkAdmin() {
+    const code = document.getElementById('adminCode').value;
+    if (code === "Evalexis2013") {
+        isAdmin = true;
+        alert("Mode admin activé !");
+        document.getElementById('addButton').style.display = 'inline-block';
+    } else {
+        alert("Code incorrect !");
+    }
+}
+
+function openAddModal() {
+    if (!isAdmin) return;
+    document.getElementById('addScriptModal').style.display = 'block';
+}
+
+function closeAddModal() {
+    document.getElementById('addScriptModal').style.display = 'none';
+}
+
+function saveScript() {
+    const title = document.getElementById('newTitle').value;
+    const description = document.getElementById('newDescription').value;
+    const code = document.getElementById('newCode').value;
+    if (title && description && code) {
+        scripts.push({ title, description, code });
+        localStorage.setItem("scripts", JSON.stringify(scripts));
+        renderScripts();
+        closeAddModal();
+    } else {
+        alert("Veuillez remplir tous les champs !");
+    }
+}
+</script>
 
 </body>
 </html>
