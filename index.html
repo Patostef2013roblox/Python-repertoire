@@ -41,15 +41,16 @@
         color: #00ff88;
         border: 1px solid #00ff88;
     }
+    footer {
+        position: fixed; bottom: 0; width: 100%; text-align: center;
+        padding: 10px; background: #001a12;
+    }
 </style>
 </head>
 <body>
 
 <h1>Bienvenue sur Dark Hub</h1>
-<p>Entrez le code d'accès admin :</p>
-<input type="password" id="adminCode" placeholder="Code secret">
-<button onclick="checkAdmin()">Entrer</button>
-<br><br>
+<br>
 <button onclick="openScripts()">Ouvrir les scripts</button>
 
 <!-- Panneau des scripts -->
@@ -79,30 +80,38 @@
     <button onclick="closeAddModal()">Annuler</button>
 </div>
 
-<script>
-let isAdmin = false;
-let scripts = JSON.parse(localStorage.getItem("scripts") || "[]");
+<!-- Footer admin -->
+<footer>
+    <input type="password" id="adminCode" placeholder="Code secret" style="width:200px;">
+    <button onclick="checkAdmin()">Entrer</button>
+</footer>
 
-// Scripts par défaut
-if (scripts.length === 0) {
-    scripts = [
-        {
-            title: "Spirale Colorée",
-            description: "Un dessin hypnotique avec turtle et des couleurs HSV.",
-            code: `import turtle as t\nimport colorsys\n\nt.bgcolor("black")\nt.speed(0)\nt.pensize(2)\nh = 0\n\nfor i in range(360):\n    c = colorsys.hsv_to_rgb(h, 1, 1)\n    t.pencolor(c)\n    t.circle(i, 90)\n    t.left(59)\n    h += 0.005\n\nt.done()`
-        }
-    ];
+<!-- Supabase JS -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script>
+const SUPABASE_URL = "YOUR_SUPABASE_URL";
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let isAdmin = false;
+let scripts = [];
+
+// Charger les scripts depuis Supabase
+async function loadScripts() {
+    const { data, error } = await supabase.from('scripts').select('*').order('created_at', { ascending: true });
+    if (error) { alert(error.message); return; }
+    scripts = data;
+    renderScripts();
 }
 
+// Ouvrir le panneau des scripts
 function openScripts() {
-    renderScripts();
+    loadScripts();
     document.getElementById('scriptsPanel').style.display = 'block';
 }
+function closeScripts() { document.getElementById('scriptsPanel').style.display = 'none'; }
 
-function closeScripts() {
-    document.getElementById('scriptsPanel').style.display = 'none';
-}
-
+// Afficher les scripts
 function renderScripts() {
     const list = document.getElementById('scriptsList');
     list.innerHTML = "";
@@ -114,6 +123,7 @@ function renderScripts() {
     });
 }
 
+// Filtrer les scripts
 function filterScripts() {
     const query = document.getElementById('searchBox').value.toLowerCase();
     const buttons = document.querySelectorAll('#scriptsList button');
@@ -122,6 +132,7 @@ function filterScripts() {
     });
 }
 
+// Détails d'un script
 function openDetail(index) {
     const s = scripts[index];
     document.getElementById('detailTitle').innerText = s.title;
@@ -129,43 +140,38 @@ function openDetail(index) {
     document.getElementById('detailCode').innerText = s.code;
     document.getElementById('scriptDetail').style.display = 'block';
 }
+function closeDetail() { document.getElementById('scriptDetail').style.display = 'none'; }
 
-function closeDetail() {
-    document.getElementById('scriptDetail').style.display = 'none';
-}
-
+// Vérification admin
 function checkAdmin() {
     const code = document.getElementById('adminCode').value;
     if (code === "Evalexis2013") {
         isAdmin = true;
         alert("Mode admin activé !");
         document.getElementById('addButton').style.display = 'inline-block';
-    } else {
-        alert("Code incorrect !");
-    }
+    } else { alert("Code incorrect !"); }
 }
 
-function openAddModal() {
-    if (!isAdmin) return;
-    document.getElementById('addScriptModal').style.display = 'block';
-}
+// Fenêtres ajout
+function openAddModal() { if (!isAdmin) return; document.getElementById('addScriptModal').style.display = 'block'; }
+function closeAddModal() { document.getElementById('addScriptModal').style.display = 'none'; }
 
-function closeAddModal() {
-    document.getElementById('addScriptModal').style.display = 'none';
-}
-
-function saveScript() {
+// Ajouter un script via Supabase
+async function saveScript() {
     const title = document.getElementById('newTitle').value;
     const description = document.getElementById('newDescription').value;
     const code = document.getElementById('newCode').value;
-    if (title && description && code) {
-        scripts.push({ title, description, code });
-        localStorage.setItem("scripts", JSON.stringify(scripts));
-        renderScripts();
-        closeAddModal();
-    } else {
-        alert("Veuillez remplir tous les champs !");
-    }
+    if (!title || !description || !code) return alert("Veuillez remplir tous les champs !");
+    
+    const { data, error } = await supabase.from('scripts').insert([{ title, description, code }]);
+    if (error) { alert(error.message); return; }
+
+    document.getElementById('newTitle').value = '';
+    document.getElementById('newDescription').value = '';
+    document.getElementById('newCode').value = '';
+
+    await loadScripts();
+    closeAddModal();
 }
 </script>
 
