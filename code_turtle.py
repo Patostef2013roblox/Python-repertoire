@@ -1,1 +1,36 @@
+import turtle as t
+import colorsys, time
 
+t.bgcolor("black")
+t.pensize(1)
+t.speed(0)
+
+h = 0
+steps = 250
+target_duration = 3  # secondes
+
+start = time.time()
+
+for i in range(steps):
+    c = colorsys.hsv_to_rgb(h, 1, 1)
+    t.fillcolor(c)
+    t.begin_fill()
+
+    t.forward(i)
+    t.left(100)
+    t.circle(30)
+
+    for j in range(2):
+        t.forward(i * j)
+        t.right(109)
+
+    t.end_fill()
+    h += 0.008
+
+    elapsed = time.time() - start
+    remaining = target_duration - elapsed
+    steps_left = steps - (i + 1)
+    if steps_left > 0 and remaining > 0:
+        time.sleep(remaining / steps_left)
+
+t.done()
