@@ -1,252 +1,315 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scripts Python</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dark Hub — Scripts Python</title>
 <style>
-    body {
-        margin: 0;
-        font-family: Arial, sans-serif;
-        background: #000;
-        color: #0f0;
-        text-align: center;
-    }
-    header {
-        padding: 20px;
-        font-size: 2rem;
-    }
-    button {
-        background: #0f0;
-        color: #000;
-        border: none;
-        padding: 10px 20px;
-        margin: 5px;
-        cursor: pointer;
-        border-radius: 5px;
-    }
-    #scriptList button {
-        display: block;
-        width: 200px;
-        margin: 10px auto;
-    }
-    #scriptModal, #addModal {
-        display: none;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: #111;
-        padding: 20px;
-        border: 2px solid #0f0;
-        z-index: 1000;
-    }
-    #scriptModal pre {
-        background: #000;
-        color: #0f0;
-        padding: 10px;
-        text-align: left;
-        overflow-x: auto;
-    }
-    #overlay {
-        display: none;
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        z-index: 500;
-    }
-    #adminControls {
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        text-align: center;
-    }
+  body{
+    margin:0; font-family:Arial, sans-serif;
+    background:#0d0d0d; color:#00ff88; text-align:center; overflow-x:hidden;
+  }
+  h1{ margin-top:50px; }
+  button{
+    background:#001a12; color:#00ff88; border:1px solid #00ff88;
+    padding:10px 20px; margin:10px; cursor:pointer; border-radius:5px; transition:.2s;
+  }
+  button:hover{ background:#003322; }
+  input, textarea{
+    width:80%; margin:10px auto; display:block; padding:8px;
+    background:#000; color:#00ff88; border:1px solid #00ff88; border-radius:5px;
+  }
+  /* Panneaux / modales */
+  #scriptsPanel, #scriptDetail, #addScriptModal{
+    display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+    background:rgba(0,0,0,0.95); padding:20px; overflow-y:auto; z-index:10;
+  }
+  #scriptsList button{ display:block; margin:5px auto; width:220px; }
+  #detailCode{
+    text-align:left; background:#001a12; padding:10px; border-radius:5px; overflow:auto;
+    max-width:900px; margin:10px auto; white-space:pre-wrap;
+  }
+  .actions{ margin-top:10px; }
+  /* Footer admin fixé en bas */
+  #adminFooter{
+    position:fixed; bottom:20px; left:0; right:0; text-align:center; z-index:5;
+  }
+  /* Particules en fond */
+  #particles{
+    position:fixed; top:0; left:0; width:100%; height:100%;
+    z-index:-1; background:#0d0d0d;
+  }
 </style>
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-<header>Scripts Python</header>
-<input type="text" id="searchInput" placeholder="Rechercher un script">
-<button onclick="toggleScriptList()">Ouvrir les scripts</button>
+<!-- Fond animé -->
+<canvas id="particles"></canvas>
 
-<div id="scriptList" style="display:none;"></div>
+<h1>Bienvenue sur Dark Hub</h1>
+<button onclick="openScripts()">Ouvrir les scripts</button>
 
-<div id="overlay"></div>
-
-<div id="scriptModal">
-    <h2 id="modalTitle"></h2>
-    <p id="modalDescription"></p>
-    <pre id="modalCode"></pre>
-    <button id="runButton">Exécuter le script</button>
-    <button onclick="closeModal()">Fermer</button>
-    <div id="adminActions"></div>
+<!-- Panneau des scripts -->
+<div id="scriptsPanel">
+  <h2>Scripts disponibles</h2>
+  <input type="text" id="searchBox" placeholder="Rechercher un script..." oninput="filterScripts()">
+  <div id="scriptsList"></div>
+  <button onclick="closeScripts()">Fermer</button>
+  <button id="addButton" style="display:none;" onclick="openAddModal()">+</button>
 </div>
 
-<div id="addModal">
-    <h2>Ajouter un script</h2>
-    <input type="text" id="newTitle" placeholder="Titre"><br><br>
-    <textarea id="newDescription" placeholder="Description"></textarea><br><br>
-    <textarea id="newCode" placeholder="Code"></textarea><br><br>
-    <button onclick="addScript()">Valider</button>
-    <button onclick="closeAddModal()">Fermer</button>
+<!-- Détails d'un script -->
+<div id="scriptDetail">
+  <h2 id="detailTitle"></h2>
+  <p id="detailDescription"></p>
+  <pre id="detailCode"></pre>
+
+  <div class="actions">
+    <button id="runBtn" onclick="executeScript()">Exécuter le script</button>
+    <span id="runHint" style="display:block; font-size:.9em; opacity:.8; margin-top:4px;">
+      (nécessite le serveur backend)
+    </span>
+  </div>
+
+  <!-- Zone d'affichage du résultat -->
+  <div id="runOutput" style="max-width:900px; margin:10px auto;">
+    <img id="scriptOutputImg" style="max-width:100%; display:none; border:1px solid #00ff88; border-radius:5px"/>
+    <pre id="scriptOutputText" style="display:none; text-align:left; background:#001a12; padding:10px; border-radius:5px;"></pre>
+  </div>
+
+  <!-- Actions Admin -->
+  <div id="adminActions" class="actions" style="display:none;">
+    <button onclick="editCurrent()">Modifier</button>
+    <button onclick="deleteCurrent()">Supprimer</button>
+  </div>
+
+  <button onclick="closeDetail()">Fermer</button>
 </div>
 
-<div id="adminControls">
-    <input type="text" id="adminCode" placeholder="Code admin">
-    <button onclick="checkAdminCode()">Entrer</button>
-    <button id="addScriptButton" style="display:none;" onclick="openAddModal()">+</button>
+<!-- Fenêtre d'ajout de script -->
+<div id="addScriptModal">
+  <h2>Ajouter un script</h2>
+  <input id="newTitle" placeholder="Titre du script">
+  <textarea id="newDescription" placeholder="Description"></textarea>
+  <textarea id="newCode" placeholder="Code Python"></textarea>
+  <button onclick="saveScript()">Valider</button>
+  <button onclick="closeAddModal()">Annuler</button>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Footer admin -->
+<div id="adminFooter">
+  <input type="password" id="adminCode" placeholder="Code secret" style="width:200px;">
+  <button onclick="checkAdmin()">Entrer</button>
+</div>
+
 <script>
+/* =======================
+   CONFIG
+======================= */
 const SUPABASE_URL = "https://puqthoqzlliyqkduhbhj.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1cXRob3F6bGxpeXFrZHVoYmhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMDA4NDksImV4cCI6MjA3MTY3Njg0OX0.K60SelW2IM17WJdUbYmxeaCS30iEUQzomCvE1ZqYmwc";
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const BACKEND_URL = "https://TON-SERVEUR-BACKEND"; // ← mets l'URL de ton serveur (ex: https://api.tondomaine.com)
 
+/* =======================
+   SUPABASE
+======================= */
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let isAdmin = false;
 let scripts = [];
+let currentIndex = null; // index du script ouvert
 
 async function loadScripts() {
-    const { data, error } = await supabase.from('scripts').select('*');
-    if (error) {
-        alert("Erreur de chargement : " + error.message);
-        return;
+  const { data, error } = await supabase.from('scripts').select('*').order('created_at', { ascending: true });
+  if (error) { alert("Erreur de chargement : " + error.message); return; }
+  scripts = data || [];
+  renderScripts();
+}
+
+/* =======================
+   UI LISTE / RECHERCHE
+======================= */
+function openScripts(){ renderScripts(); document.getElementById('scriptsPanel').style.display='block'; }
+function closeScripts(){ document.getElementById('scriptsPanel').style.display='none'; }
+
+function renderScripts(){
+  const list = document.getElementById('scriptsList');
+  list.innerHTML = "";
+  scripts.forEach((s, i) => {
+    const btn = document.createElement("button");
+    btn.innerText = s.title;
+    btn.onclick = () => openDetail(i);
+    list.appendChild(btn);
+  });
+}
+
+function filterScripts(){
+  const q = document.getElementById('searchBox').value.toLowerCase();
+  [...document.querySelectorAll('#scriptsList button')].forEach(btn=>{
+    btn.style.display = btn.innerText.toLowerCase().includes(q) ? 'block' : 'none';
+  });
+}
+
+/* =======================
+   DETAIL SCRIPT
+======================= */
+function openDetail(index){
+  currentIndex = index;
+  const s = scripts[index];
+  document.getElementById('detailTitle').innerText = s.title;
+  document.getElementById('detailDescription').innerText = s.description;
+  document.getElementById('detailCode').innerText = s.code;
+
+  // reset output zone
+  document.getElementById('scriptOutputImg').style.display = 'none';
+  document.getElementById('scriptOutputText').style.display = 'none';
+  document.getElementById('scriptOutputImg').src = '';
+
+  // actions admin visibles si isAdmin
+  document.getElementById('adminActions').style.display = isAdmin ? 'block' : 'none';
+
+  document.getElementById('scriptDetail').style.display = 'block';
+}
+function closeDetail(){ document.getElementById('scriptDetail').style.display='none'; }
+
+/* =======================
+   ADMIN
+======================= */
+function checkAdmin(){
+  const code = document.getElementById('adminCode').value;
+  if(code === "Evalexis2013"){
+    isAdmin = true;
+    alert("Mode admin activé !");
+    document.getElementById('addButton').style.display = 'inline-block';
+    // Si un détail est ouvert, afficher actions admin
+    if (document.getElementById('scriptDetail').style.display === 'block'){
+      document.getElementById('adminActions').style.display = 'block';
     }
-    scripts = data;
-    displayScripts();
+  } else {
+    alert("Code incorrect !");
+  }
 }
 
-function displayScripts(filter = "") {
-    const list = document.getElementById('scriptList');
-    list.innerHTML = "";
-    scripts
-        .filter(s => s.title.toLowerCase().includes(filter.toLowerCase()))
-        .forEach(script => {
-            const btn = document.createElement('button');
-            btn.textContent = script.title;
-            btn.onclick = () => openScript(script);
-            list.appendChild(btn);
-        });
+function openAddModal(){ if(!isAdmin) return; document.getElementById('addScriptModal').style.display='block'; }
+function closeAddModal(){ document.getElementById('addScriptModal').style.display='none'; }
+
+async function saveScript(){
+  const title = document.getElementById('newTitle').value.trim();
+  const description = document.getElementById('newDescription').value.trim();
+  const code = document.getElementById('newCode').value;
+  if(!title || !description || !code) return alert("Veuillez remplir tous les champs !");
+  const { error } = await supabase.from('scripts').insert([{ title, description, code }]);
+  if(error){ alert("Erreur : " + error.message); return; }
+  document.getElementById('newTitle').value = '';
+  document.getElementById('newDescription').value = '';
+  document.getElementById('newCode').value = '';
+  closeAddModal();
+  await loadScripts();
 }
 
-function toggleScriptList() {
-    const list = document.getElementById('scriptList');
-    list.style.display = (list.style.display === "none") ? "block" : "none";
+async function editCurrent(){
+  if(!isAdmin || currentIndex === null) return;
+  const s = scripts[currentIndex];
+  const newTitle = prompt("Nouveau titre :", s.title);
+  if(newTitle === null) return;
+  const newDescription = prompt("Nouvelle description :", s.description);
+  if(newDescription === null) return;
+  const newCode = prompt("Nouveau code :", s.code);
+  if(newCode === null) return;
+
+  const { error } = await supabase
+    .from('scripts')
+    .update({ title:newTitle, description:newDescription, code:newCode })
+    .eq('id', s.id);
+
+  if(error){ alert("Erreur : " + error.message); return; }
+  await loadScripts();
+  // Réouvrir le détail mis à jour
+  const idx = scripts.findIndex(x=>x.id===s.id);
+  if(idx>=0) openDetail(idx);
 }
 
-function openScript(script) {
-    document.getElementById('modalTitle').textContent = script.title;
-    document.getElementById('modalDescription').textContent = script.description;
-    document.getElementById('modalCode').textContent = script.code;
-    document.getElementById('overlay').style.display = "block";
-    document.getElementById('scriptModal').style.display = "block";
+async function deleteCurrent(){
+  if(!isAdmin || currentIndex === null) return;
+  const s = scripts[currentIndex];
+  if(!confirm(`Supprimer "${s.title}" ?`)) return;
 
-    const adminActions = document.getElementById('adminActions');
-    adminActions.innerHTML = "";
-
-    if (isAdmin) {
-        const editBtn = document.createElement('button');
-        editBtn.textContent = 'Modifier';
-        editBtn.onclick = () => editScript(script.id);
-        adminActions.appendChild(editBtn);
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.textContent = 'Supprimer';
-        deleteBtn.onclick = () => deleteScript(script.id);
-        adminActions.appendChild(deleteBtn);
-    }
-
-    document.getElementById('runButton').onclick = () => {
-        try {
-            eval(script.code);
-        } catch (err) {
-            alert("Erreur lors de l'exécution : " + err);
-        }
-    };
+  const { error } = await supabase.from('scripts').delete().eq('id', s.id);
+  if(error){ alert("Erreur : " + error.message); return; }
+  closeDetail();
+  await loadScripts();
 }
 
-function closeModal() {
-    document.getElementById('overlay').style.display = "none";
-    document.getElementById('scriptModal').style.display = "none";
-}
+/* =======================
+   EXECUTION VIA BACKEND
+======================= */
+async function executeScript(){
+  if(!BACKEND_URL || BACKEND_URL.includes("TON-SERVEUR-BACKEND")){
+    alert("Configure BACKEND_URL pour utiliser le bouton 'Exécuter'.");
+    return;
+  }
+  const code = document.getElementById('detailCode').innerText;
+  const imgEl = document.getElementById('scriptOutputImg');
+  const txtEl = document.getElementById('scriptOutputText');
+  imgEl.style.display = 'none'; txtEl.style.display = 'none';
 
-function openAddModal() {
-    document.getElementById('overlay').style.display = "block";
-    document.getElementById('addModal').style.display = "block";
-}
+  try{
+    const res = await fetch(`${BACKEND_URL}/run-script`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ code })
+    });
 
-function closeAddModal() {
-    document.getElementById('overlay').style.display = "none";
-    document.getElementById('addModal').style.display = "none";
-}
-
-async function addScript() {
-    const title = document.getElementById('newTitle').value;
-    const description = document.getElementById('newDescription').value;
-    const code = document.getElementById('newCode').value;
-
-    const { error } = await supabase.from('scripts').insert([{ title, description, code }]);
-    if (error) {
-        alert("Erreur : " + error.message);
+    const ct = res.headers.get('content-type') || '';
+    if(ct.includes('image')){
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      imgEl.src = url;
+      imgEl.style.display = 'block';
     } else {
-        closeAddModal();
-        loadScripts();
+      const data = await res.json().catch(()=>({message:'Réponse reçue.'}));
+      txtEl.textContent = data.error ? `Erreur: ${data.error}` : (data.message || JSON.stringify(data,null,2));
+      txtEl.style.display = 'block';
     }
+  }catch(e){
+    txtEl.textContent = "Erreur réseau : " + e;
+    txtEl.style.display = 'block';
+  }
 }
 
-async function editScript(id) {
-    const newTitle = prompt("Nouveau titre :");
-    const newDescription = prompt("Nouvelle description :");
-    const newCode = prompt("Nouveau code :");
+/* =======================
+   PARTICULES (fond)
+======================= */
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+function resizeCanvas(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+resizeCanvas(); window.addEventListener('resize', resizeCanvas);
 
-    if (!newTitle || !newDescription || !newCode) return;
-
-    const { error } = await supabase
-        .from('scripts')
-        .update({ title: newTitle, description: newDescription, code: newCode })
-        .eq('id', id);
-
-    if (error) {
-        alert("Erreur : " + error.message);
-    } else {
-        loadScripts();
-        closeModal();
-    }
+let particles = [];
+const particleCount = 90;
+for(let i=0;i<particleCount;i++){
+  particles.push({
+    x: Math.random()*canvas.width, y: Math.random()*canvas.height,
+    dx: (Math.random()-0.5)*0.6, dy: (Math.random()-0.5)*0.6,
+    r: Math.random()*2+1
+  });
 }
-
-async function deleteScript(id) {
-    if (!confirm("Voulez-vous vraiment supprimer ce script ?")) return;
-
-    const { error } = await supabase
-        .from('scripts')
-        .delete()
-        .eq('id', id);
-
-    if (error) {
-        alert("Erreur : " + error.message);
-    } else {
-        loadScripts();
-        closeModal();
-    }
+function animate(){
+  ctx.fillStyle = "#0d0d0d";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  particles.forEach(p=>{
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle = "rgba(0,255,136,0.75)"; ctx.fill();
+    p.x += p.dx; p.y += p.dy;
+    if(p.x<0||p.x>canvas.width) p.dx*=-1;
+    if(p.y<0||p.y>canvas.height) p.dy*=-1;
+  });
+  requestAnimationFrame(animate);
 }
+animate();
 
-function checkAdminCode() {
-    const codeInput = document.getElementById('adminCode').value;
-    if (codeInput === "Evalexis2013") {
-        isAdmin = true;
-        document.getElementById('addScriptButton').style.display = 'inline-block';
-        loadScripts();
-    } else {
-        alert("Code incorrect");
-    }
-}
-
-document.getElementById('searchInput').addEventListener('input', (e) => {
-    displayScripts(e.target.value);
-});
-
+/* Init */
 loadScripts();
 </script>
 
