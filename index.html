@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Dark Hub — Scripts Python</title>
+<title>Python répertoire</title>
 <style>
   body{
     margin:0; font-family:Arial, sans-serif;
@@ -48,7 +48,7 @@
 <!-- Fond animé -->
 <canvas id="particles"></canvas>
 
-<h1>Bienvenue sur Dark Hub</h1>
+<h1>Bienvenue sur Python répertoire</h1>
 <button onclick="openScripts()">Ouvrir les scripts</button>
 
 <!-- Panneau des scripts -->
@@ -66,12 +66,6 @@
   <p id="detailDescription"></p>
   <pre id="detailCode"></pre>
 
-  <div class="actions">
-    <button id="runBtn" onclick="executeScript()">Exécuter le script</button>
-    <span id="runHint" style="display:block; font-size:.9em; opacity:.8; margin-top:4px;">
-      (nécessite le serveur backend)
-    </span>
-  </div>
 
   <!-- Zone d'affichage du résultat -->
   <div id="runOutput" style="max-width:900px; margin:10px auto;">
@@ -110,7 +104,6 @@
 ======================= */
 const SUPABASE_URL = "https://puqthoqzlliyqkduhbhj.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1cXRob3F6bGxpeXFrZHVoYmhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMDA4NDksImV4cCI6MjA3MTY3Njg0OX0.K60SelW2IM17WJdUbYmxeaCS30iEUQzomCvE1ZqYmwc";
-const BACKEND_URL = "https://TON-SERVEUR-BACKEND"; // ← mets l'URL de ton serveur (ex: https://api.tondomaine.com)
 
 /* =======================
    SUPABASE
@@ -241,42 +234,6 @@ async function deleteCurrent(){
   await loadScripts();
 }
 
-/* =======================
-   EXECUTION VIA BACKEND
-======================= */
-async function executeScript(){
-  if(!BACKEND_URL || BACKEND_URL.includes("TON-SERVEUR-BACKEND")){
-    alert("Configure BACKEND_URL pour utiliser le bouton 'Exécuter'.");
-    return;
-  }
-  const code = document.getElementById('detailCode').innerText;
-  const imgEl = document.getElementById('scriptOutputImg');
-  const txtEl = document.getElementById('scriptOutputText');
-  imgEl.style.display = 'none'; txtEl.style.display = 'none';
-
-  try{
-    const res = await fetch(`${BACKEND_URL}/run-script`, {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ code })
-    });
-
-    const ct = res.headers.get('content-type') || '';
-    if(ct.includes('image')){
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      imgEl.src = url;
-      imgEl.style.display = 'block';
-    } else {
-      const data = await res.json().catch(()=>({message:'Réponse reçue.'}));
-      txtEl.textContent = data.error ? `Erreur: ${data.error}` : (data.message || JSON.stringify(data,null,2));
-      txtEl.style.display = 'block';
-    }
-  }catch(e){
-    txtEl.textContent = "Erreur réseau : " + e;
-    txtEl.style.display = 'block';
-  }
-}
 
 /* =======================
    PARTICULES (fond)
