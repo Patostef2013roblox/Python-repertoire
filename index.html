@@ -132,7 +132,7 @@ let scripts = JSON.parse(localStorage.getItem("scripts") || "[]");
 
 if(scripts.length === 0){
     scripts = [{
-        title: "Spirale Colorée",
+        title: "Pythongrafics - Vortex coloré",
         description: "Un dessin hypnotique avec turtle et des couleurs HSV.",
         code: `import turtle as t\nimport colorsys\n\nt.bgcolor("black")\nt.speed(0)\nt.pensize(2)\nh = 0\n\nfor i in range(360):\n    c = colorsys.hsv_to_rgb(h, 1, 1)\n    t.pencolor(c)\n    t.circle(i, 90)\n    t.left(59)\n    h += 0.005\n\nt.done()`
     }];
