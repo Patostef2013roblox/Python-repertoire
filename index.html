@@ -2,185 +2,200 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Scripts Python</title>
 <style>
-  body {
-    background-color: #000;
-    color: #0f0;
-    font-family: monospace;
-    margin: 0;
-    padding: 0;
-  }
-  .container {
-    padding: 20px;
-    text-align: center;
-  }
-  button {
-    background: #0f0;
-    color: #000;
-    border: none;
-    padding: 10px 20px;
-    margin: 5px;
-    font-weight: bold;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: 0.2s;
-  }
-  button:hover {
-    background: #00ff66;
-  }
-  #scriptsList {
-    margin-top: 20px;
-  }
-  .script-btn {
-    display: block;
-    background: none;
-    border: 1px solid #0f0;
-    color: #0f0;
-    width: 80%;
-    margin: 5px auto;
-    padding: 10px;
-    text-align: left;
-    cursor: pointer;
-    border-radius: 8px;
-  }
-  .script-btn:hover {
-    background: #0f0;
-    color: #000;
-  }
-  #adminPanel {
-    position: fixed;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #111;
-    padding: 10px;
-    border: 1px solid #0f0;
-    border-radius: 8px;
-  }
-  #addScriptForm {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #111;
-    border: 1px solid #0f0;
-    padding: 20px;
-    width: 300px;
-    border-radius: 8px;
-  }
-  input, textarea {
-    width: 100%;
-    margin: 5px 0;
-    background: #000;
-    color: #0f0;
-    border: 1px solid #0f0;
-    padding: 5px;
-  }
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #000;
+        color: #0f0;
+        text-align: center;
+    }
+    header {
+        padding: 20px;
+        font-size: 2rem;
+    }
+    button {
+        background: #0f0;
+        color: #000;
+        border: none;
+        padding: 10px 20px;
+        margin: 5px;
+        cursor: pointer;
+        border-radius: 5px;
+    }
+    #scriptList button {
+        display: block;
+        width: 200px;
+        margin: 10px auto;
+    }
+    #scriptModal, #addModal {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #111;
+        padding: 20px;
+        border: 2px solid #0f0;
+        z-index: 1000;
+    }
+    #scriptModal pre {
+        background: #000;
+        color: #0f0;
+        padding: 10px;
+        text-align: left;
+        overflow-x: auto;
+    }
+    #overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 500;
+    }
+    #adminControls {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+    }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+</head>
+<body>
+
+<header>Scripts Python</header>
+<input type="text" id="searchInput" placeholder="Rechercher un script">
+<button onclick="toggleScriptList()">Ouvrir les scripts</button>
+
+<div id="scriptList" style="display:none;"></div>
+
+<div id="overlay"></div>
+
+<div id="scriptModal">
+    <h2 id="modalTitle"></h2>
+    <p id="modalDescription"></p>
+    <pre id="modalCode"></pre>
+    <button id="runButton">Exécuter le script</button>
+    <button onclick="closeModal()">Fermer</button>
+    <div id="adminActions"></div>
+</div>
+
+<div id="addModal">
+    <h2>Ajouter un script</h2>
+    <input type="text" id="newTitle" placeholder="Titre"><br><br>
+    <textarea id="newDescription" placeholder="Description"></textarea><br><br>
+    <textarea id="newCode" placeholder="Code"></textarea><br><br>
+    <button onclick="addScript()">Valider</button>
+    <button onclick="closeAddModal()">Fermer</button>
+</div>
+
+<div id="adminControls">
+    <input type="text" id="adminCode" placeholder="Code admin">
+    <button onclick="checkAdminCode()">Entrer</button>
+    <button id="addScriptButton" style="display:none;" onclick="openAddModal()">+</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = "https://puqthoqzlliyqkduhbhj.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1cXRob3F6bGxpeXFrZHVoYmhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMDA4NDksImV4cCI6MjA3MTY3Njg0OX0.K60SelW2IM17WJdUbYmxeaCS30iEUQzomCvE1ZqYmwc"; // Mets ta clé ici
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1cXRob3F6bGxpeXFrZHVoYmhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMDA4NDksImV4cCI6MjA3MTY3Njg0OX0.K60SelW2IM17WJdUbYmxeaCS30iEUQzomCvE1ZqYmwc";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-let scripts = [];
 let isAdmin = false;
+let scripts = [];
 
 async function loadScripts() {
-  const { data, error } = await supabase
-      .from('scripts')
-      .select('*')
-      .order('created_at', { ascending: true });
-
-  if (error) {
-    console.error("Erreur :", error);
-    return;
-  }
-  scripts = data;
-  renderScripts();
+    const { data, error } = await supabase.from('scripts').select('*');
+    if (error) {
+        alert("Erreur de chargement : " + error.message);
+        return;
+    }
+    scripts = data;
+    displayScripts();
 }
 
-function renderScripts(filter = "") {
-  const list = document.getElementById("scriptsList");
-  list.innerHTML = "";
-  scripts
-    .filter(s => s.title.toLowerCase().includes(filter.toLowerCase()))
-    .forEach(script => {
-      const btn = document.createElement("button");
-      btn.className = "script-btn";
-      btn.textContent = script.title;
-      btn.onclick = () => showScript(script);
-      list.appendChild(btn);
-    });
+function displayScripts(filter = "") {
+    const list = document.getElementById('scriptList');
+    list.innerHTML = "";
+    scripts
+        .filter(s => s.title.toLowerCase().includes(filter.toLowerCase()))
+        .forEach(script => {
+            const btn = document.createElement('button');
+            btn.textContent = script.title;
+            btn.onclick = () => openScript(script);
+            list.appendChild(btn);
+        });
 }
 
-function showScript(script) {
-  const win = document.createElement("div");
-  win.style.position = "fixed";
-  win.style.top = "50%";
-  win.style.left = "50%";
-  win.style.transform = "translate(-50%, -50%)";
-  win.style.background = "#111";
-  win.style.border = "1px solid #0f0";
-  win.style.padding = "20px";
-  win.style.width = "400px";
-  win.style.borderRadius = "8px";
-
-  win.innerHTML = `
-    <h2>${script.title}</h2>
-    <p>${script.description}</p>
-    <pre id="detailCode" style="background:#000; padding:10px; text-align:left; overflow:auto; max-height:200px;">${script.code}</pre>
-    <button onclick="document.body.removeChild(this.parentNode)">Fermer</button>
-  `;
-
-  document.body.appendChild(win);
+function toggleScriptList() {
+    const list = document.getElementById('scriptList');
+    list.style.display = (list.style.display === "none") ? "block" : "none";
 }
 
-async function checkAdmin() {
-  const code = document.getElementById("adminCode").value;
-  if (code === "Evalexis2013") {
-    isAdmin = true;
-    document.getElementById("addScriptBtn").style.display = "block";
-  } else {
-    alert("Code incorrect");
-  }
+function openScript(script) {
+    document.getElementById('modalTitle').textContent = script.title;
+    document.getElementById('modalDescription').textContent = script.description;
+    document.getElementById('modalCode').textContent = script.code;
+    document.getElementById('overlay').style.display = "block";
+    document.getElementById('scriptModal').style.display = "block";
+
+    const adminActions = document.getElementById('adminActions');
+    adminActions.innerHTML = "";
+
+    if (isAdmin) {
+        const editBtn = document.createElement('button');
+        editBtn.textContent = 'Modifier';
+        editBtn.onclick = () => editScript(script.id);
+        adminActions.appendChild(editBtn);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Supprimer';
+        deleteBtn.onclick = () => deleteScript(script.id);
+        adminActions.appendChild(deleteBtn);
+    }
+
+    document.getElementById('runButton').onclick = () => {
+        try {
+            eval(script.code);
+        } catch (err) {
+            alert("Erreur lors de l'exécution : " + err);
+        }
+    };
 }
 
-function openAddScript() {
-  document.getElementById("addScriptForm").style.display = "block";
+function closeModal() {
+    document.getElementById('overlay').style.display = "none";
+    document.getElementById('scriptModal').style.display = "none";
+}
+
+function openAddModal() {
+    document.getElementById('overlay').style.display = "block";
+    document.getElementById('addModal').style.display = "block";
+}
+
+function closeAddModal() {
+    document.getElementById('overlay').style.display = "none";
+    document.getElementById('addModal').style.display = "none";
 }
 
 async function addScript() {
-  const title = document.getElementById("newTitle").value;
-  const description = document.getElementById("newDescription").value;
-  const code = document.getElementById("newCode").value;
+    const title = document.getElementById('newTitle').value;
+    const description = document.getElementById('newDescription').value;
+    const code = document.getElementById('newCode').value;
 
-  const { error } = await supabase
-      .from('scripts')
-      .insert([{ title, description, code }]);
-
-  if (error) {
-    alert("Erreur : " + error.message);
-  } else {
-    alert("Script ajouté !");
-    document.getElementById("addScriptForm").style.display = "none";
-    loadScripts();
-  }
+    const { error } = await supabase.from('scripts').insert([{ title, description, code }]);
+    if (error) {
+        alert("Erreur : " + error.message);
+    } else {
+        closeAddModal();
+        loadScripts();
+    }
 }
-if (isAdmin) { // isAdmin = vrai si le code admin est entré
-    const editBtn = document.createElement('button');
-    editBtn.textContent = 'Modifier';
-    editBtn.onclick = () => editScript(script.id);
 
-    const deleteBtn = document.createElement('button');
-    deleteBtn.textContent = 'Supprimer';
-    deleteBtn.onclick = () => deleteScript(script.id);
-
-    scriptElement.appendChild(editBtn);
-    scriptElement.appendChild(deleteBtn);
-}
 async function editScript(id) {
     const newTitle = prompt("Nouveau titre :");
     const newDescription = prompt("Nouvelle description :");
@@ -190,17 +205,14 @@ async function editScript(id) {
 
     const { error } = await supabase
         .from('scripts')
-        .update({
-            title: newTitle,
-            description: newDescription,
-            code: newCode
-        })
+        .update({ title: newTitle, description: newDescription, code: newCode })
         .eq('id', id);
 
     if (error) {
         alert("Erreur : " + error.message);
     } else {
         loadScripts();
+        closeModal();
     }
 }
 
@@ -216,115 +228,27 @@ async function deleteScript(id) {
         alert("Erreur : " + error.message);
     } else {
         loadScripts();
+        closeModal();
     }
 }
-let isAdmin = false;
 
 function checkAdminCode() {
     const codeInput = document.getElementById('adminCode').value;
     if (codeInput === "Evalexis2013") {
         isAdmin = true;
-        document.getElementById('addScriptButton').style.display = 'block';
-        loadScripts(); // recharge pour afficher Modifier/Supprimer
+        document.getElementById('addScriptButton').style.display = 'inline-block';
+        loadScripts();
     } else {
         alert("Code incorrect");
     }
 }
 
-window.onload = loadScripts;
-</script>
-</head>
-<body>
-<div class="container">
-  <h1>Scripts Python</h1>
-  <input type="text" placeholder="Rechercher..." oninput="renderScripts(this.value)">
-  <div id="scriptsList"></div>
-</div>
-
-<div id="adminPanel">
-  <input type="text" id="adminCode" placeholder="Code admin">
-  <button onclick="checkAdmin()">Entrer</button>
-  <button id="addScriptBtn" onclick="openAddScript()" style="display:none;">+</button>
-</div>
-
-<div id="addScriptForm">
-  <h2>Ajouter un script</h2>
-  <input type="text" id="newTitle" placeholder="Titre">
-  <textarea id="newDescription" placeholder="Description"></textarea>
-  <textarea id="newCode" placeholder="Code Python"></textarea>
-  <button onclick="addScript()">Valider</button>
-  <button onclick="document.getElementById('addScriptForm').style.display='none'">Annuler</button>
-</div>
-<canvas id="particles"></canvas>
-<script>
-const canvas = document.getElementById('particles');
-const ctx = canvas.getContext('2d');
-
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-let particlesArray = [];
-const particleCount = 80;
-
-class Particle {
-    constructor() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
-        this.size = Math.random() * 2 + 1;
-        this.speedX = Math.random() * 0.6 - 0.3;
-        this.speedY = Math.random() * 0.6 - 0.3;
-    }
-    update() {
-        this.x += this.speedX;
-        this.y += this.speedY;
-        if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
-        if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
-    }
-    draw() {
-        ctx.fillStyle = 'rgba(0, 255, 0, 0.7)';
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-    }
-}
-
-function initParticles() {
-    particlesArray = [];
-    for (let i = 0; i < particleCount; i++) {
-        particlesArray.push(new Particle());
-    }
-}
-
-function animateParticles() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    particlesArray.forEach(p => {
-        p.update();
-        p.draw();
-    });
-    requestAnimationFrame(animateParticles);
-}
-
-window.addEventListener('resize', () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    initParticles();
+document.getElementById('searchInput').addEventListener('input', (e) => {
+    displayScripts(e.target.value);
 });
 
-initParticles();
-animateParticles();
+loadScripts();
 </script>
-
-<style>
-#particles {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1; /* Pour rester derrière tout */
-    background: #000; /* Garder ton fond noir */
-}
-</style>
 
 </body>
 </html>
