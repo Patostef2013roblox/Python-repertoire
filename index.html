@@ -169,6 +169,67 @@ async function addScript() {
     loadScripts();
   }
 }
+if (isAdmin) { // isAdmin = vrai si le code admin est entré
+    const editBtn = document.createElement('button');
+    editBtn.textContent = 'Modifier';
+    editBtn.onclick = () => editScript(script.id);
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = 'Supprimer';
+    deleteBtn.onclick = () => deleteScript(script.id);
+
+    scriptElement.appendChild(editBtn);
+    scriptElement.appendChild(deleteBtn);
+}
+async function editScript(id) {
+    const newTitle = prompt("Nouveau titre :");
+    const newDescription = prompt("Nouvelle description :");
+    const newCode = prompt("Nouveau code :");
+
+    if (!newTitle || !newDescription || !newCode) return;
+
+    const { error } = await supabase
+        .from('scripts')
+        .update({
+            title: newTitle,
+            description: newDescription,
+            code: newCode
+        })
+        .eq('id', id);
+
+    if (error) {
+        alert("Erreur : " + error.message);
+    } else {
+        loadScripts();
+    }
+}
+
+async function deleteScript(id) {
+    if (!confirm("Voulez-vous vraiment supprimer ce script ?")) return;
+
+    const { error } = await supabase
+        .from('scripts')
+        .delete()
+        .eq('id', id);
+
+    if (error) {
+        alert("Erreur : " + error.message);
+    } else {
+        loadScripts();
+    }
+}
+let isAdmin = false;
+
+function checkAdminCode() {
+    const codeInput = document.getElementById('adminCode').value;
+    if (codeInput === "Evalexis2013") {
+        isAdmin = true;
+        document.getElementById('addScriptButton').style.display = 'block';
+        loadScripts(); // recharge pour afficher Modifier/Supprimer
+    } else {
+        alert("Code incorrect");
+    }
+}
 
 window.onload = loadScripts;
 </script>
