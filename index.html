@@ -10,25 +10,22 @@
       align-items: center;
       height: 100vh;
     }
-    h2 {
+    h1 {
       font-size: 80px;
       font-weight: bold;
-      color: orange;
-      text-shadow: 
-        0 0 10px orange,
-        0 0 20px red,
-        0 0 40px yellow,
-        0 0 80px red,
-        0 0 100px darkred;
-      animation: flames 1s infinite alternate;
+      background: url('https://i.ibb.co/3cYt1Wb/galaxy.jpg') repeat;
+      background-size: cover;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: galaxy 20s linear infinite;
     }
-    @keyframes flames {
-      from { text-shadow: 0 0 10px orange, 0 0 20px red, 0 0 40px yellow; }
-      to { text-shadow: 0 0 20px yellow, 0 0 40px orange, 0 0 80px red; }
+    @keyframes galaxy {
+      from { background-position: 0 0; }
+      to { background-position: 1000px 0; }
     }
   </style>
 </head>
 <body>
-  <h2>En flammes</h2>
+  <h1>🌌 Galaxie 🌌</h1>
 </body>
 </html>
