@@ -6,6 +6,7 @@
     body {
       background: black;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
       height: 100vh;
@@ -13,19 +14,24 @@
     h1 {
       font-size: 80px;
       font-weight: bold;
-      background: url('https://i.ibb.co/3cYt1Wb/galaxy.jpg') repeat;
-      background-size: cover;
+      color: white;
+      position: relative;
+    }
+    h1::after {
+      content: attr(data-text);
+      position: absolute;
+      left: 0;
+      top: 100%;
+      width: 100%;
+      color: rgba(255,255,255,0.3);
+      transform: scaleY(-1);
+      background: linear-gradient(to bottom, rgba(255,255,255,0.3), transparent);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      animation: galaxy 20s linear infinite;
-    }
-    @keyframes galaxy {
-      from { background-position: 0 0; }
-      to { background-position: 1000px 0; }
     }
   </style>
 </head>
 <body>
-  <h1>🌌 Galaxie 🌌</h1>
+  <h1 data-text="💎 Miroir 💎">💎 Miroir 💎</h1>
 </body>
 </html>
